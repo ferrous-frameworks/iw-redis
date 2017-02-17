@@ -1,25 +1,31 @@
 "use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
-var _ = require('lodash');
-var async = require('async');
-var redis = require('redis');
-var ironworks = require('ironworks');
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var _ = require("lodash");
+var async = require("async");
+var redis = require("redis");
+var ironworks = require("ironworks");
 var idHelper = ironworks.helpers.idHelper;
 var Worker = ironworks.workers.Worker;
 var RedisWorker = (function (_super) {
     __extends(RedisWorker, _super);
     function RedisWorker(opts) {
-        _super.call(this, [], {
+        var _this = _super.call(this, [], {
             id: idHelper.newId(),
             name: 'iw-redis'
-        }, opts);
+        }, opts) || this;
         var defOpts = {};
-        this.opts = this.opts.beAdoptedBy(defOpts, 'worker');
-        this.opts.merge(opts);
+        _this.opts = _this.opts.beAdoptedBy(defOpts, 'worker');
+        _this.opts.merge(opts);
+        return _this;
     }
     RedisWorker.prototype.redisSet = function (info, cb) {
         var _this = this;
@@ -453,7 +459,11 @@ var RedisWorker = (function (_super) {
         return [key];
     };
     RedisWorker.prototype.connect = function (cb) {
+        var _this = this;
         this.client = redis.createClient(this.redisServer.port, this.redisServer.hostname);
+        this.client.on('error', function (err) {
+            _this.inform('error', err);
+        });
         if (!_.isUndefined(this.redisServer.password)) {
             this.client.auth(this.redisServer.password, function (e) {
                 cb(e);
